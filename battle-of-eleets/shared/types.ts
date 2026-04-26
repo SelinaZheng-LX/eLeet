@@ -63,7 +63,7 @@ export interface SocketEvents {
   'start-game': { roomCode: string };
   'submit-code': { roomCode: string; code: string; language: string };
   'add-line': { roomCode: string; draftCode: string };
-  'submit-collab': { roomCode: string; language: string };
+  'submit-collab': { roomCode: string; language: string; draftCode?: string };
 
   'room-created': { roomCode: string };
   'player-joined': { players: Player[] };

@@ -21,6 +21,7 @@ export default function CollabGame() {
     submitCollab,
   } = useGame()
   const [editorCode, setEditorCode] = useState(collabCode)
+  const myResult = results[0]
 
   const isMyTurn = currentUser?.socketId === currentTurnSocketId
   const currentTurnName = useMemo(
@@ -137,12 +138,20 @@ export default function CollabGame() {
             <button
               className="button primary"
               onClick={() => {
-                submitCollab()
+                submitCollab(editorCode)
               }}
             >
               Submit Team Code
             </button>
           </div>
+          {myResult ? (
+            <div className={`submission-feedback ${myResult.passed ? "pass" : "fail"}`}>
+              <p className="submission-title">
+                {myResult.passed ? "Passed" : "Failed"} {myResult.passedCount}/{myResult.totalCount} testcases
+              </p>
+              {myResult.error ? <p className="submission-error">{myResult.error}</p> : null}
+            </div>
+          ) : null}
           <p className="submission-meta">
             Add exactly one appended line (indentation/comments allowed), then click Add Line.
           </p>

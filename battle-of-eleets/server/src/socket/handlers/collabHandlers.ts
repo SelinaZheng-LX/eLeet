@@ -14,7 +14,10 @@ function getOtherPlayerSocketId(roomCode: string, socketId: string): string | nu
   return otherPlayer?.socketId ?? null;
 }
 
-function extractSingleAppendedLine(baseCode: string, draftCode: string): string | null {
+function buildNextCollabState(
+  baseCode: string,
+  draftCode: string,
+): { nextCodeState: string; lineForHistory: string } | null {
   const normalizedBase = baseCode.replace(/\r/g, '');
   const normalizedDraft = draftCode.replace(/\r/g, '');
   if (!normalizedDraft.startsWith(normalizedBase)) {
@@ -22,8 +25,10 @@ function extractSingleAppendedLine(baseCode: string, draftCode: string): string 
   }
 
   let suffix = normalizedDraft.slice(normalizedBase.length);
+  let startedOnNewLine = false;
   if (suffix.startsWith('\n')) {
     suffix = suffix.slice(1);
+    startedOnNewLine = true;
   }
   if (suffix.endsWith('\n')) {
     suffix = suffix.slice(0, -1);
@@ -32,7 +37,19 @@ function extractSingleAppendedLine(baseCode: string, draftCode: string): string 
   if (!suffix || suffix.includes('\n') || suffix.trim().length === 0) {
     return null;
   }
-  return suffix;
+
+  // Preserve exact indentation/content from editor draft. Only enforce
+  // one submitted logical line and ensure shared state ends with newline.
+  const appendedSegment = `${startedOnNewLine ? '\n' : ''}${suffix}`;
+  const nextCodeStateRaw = `${normalizedBase}${appendedSegment}`;
+  const nextCodeState = nextCodeStateRaw.endsWith('\n')
+    ? nextCodeStateRaw
+    : `${nextCodeStateRaw}\n`;
+
+  return {
+    nextCodeState,
+    lineForHistory: suffix,
+  };
 }
 
 export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): void {
@@ -54,21 +71,20 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
     const problem = problems.find((entry) => entry.id === room.problemId);
     const starterCode = problem?.starterCode.python ?? '';
     const baseCode = room.codeState && room.codeState.length > 0 ? room.codeState : starterCode;
-    const line = extractSingleAppendedLine(baseCode, String(draftCode ?? ''));
-    if (!line) {
+    const nextState = buildNextCollabState(baseCode, String(draftCode ?? ''));
+    if (!nextState) {
       return;
     }
 
-    const nextCodeState = `${baseCode}${baseCode.endsWith('\n') ? '' : '\n'}${line}\n`;
     const turnNumber = room.turnNumber ?? 1;
     const turnEntry: TurnEntry = {
       socketId: socket.id,
       username: player.username,
-      line,
+      line: nextState.lineForHistory,
       turnNumber,
     };
 
-    room.codeState = nextCodeState;
+    room.codeState = nextState.nextCodeState;
     room.turnHistory ??= [];
     room.turnHistory.push(turnEntry);
 
@@ -79,7 +95,7 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
     }
 
     io.to(roomCode).emit('code-updated', {
-      codeState: nextCodeState,
+      codeState: nextState.nextCodeState,
       lastLine: turnEntry,
     });
 
@@ -91,7 +107,7 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
     }
   });
 
-  socket.on('submit-collab', async ({ roomCode, language }) => {
+  socket.on('submit-collab', async ({ roomCode, language, draftCode }) => {
     const room = rooms.get(roomCode);
     if (!room || room.mode !== 'COLLAB' || room.status !== 'IN_GAME') {
       return;
@@ -107,6 +123,13 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
       return;
     }
 
+    const starterCode = problem.starterCode.python ?? '';
+    const baseCode = room.codeState && room.codeState.length > 0 ? room.codeState : starterCode;
+    const maybeNextState = typeof draftCode === 'string'
+      ? buildNextCollabState(baseCode, draftCode)
+      : null;
+    const codeForEvaluation = maybeNextState?.nextCodeState ?? baseCode;
+
     let result: {
       socketId: string;
       username: string;
@@ -120,20 +143,21 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
     };
 
     try {
-      const baseResult = await runSubmission(room.codeState ?? '', language, problem.testCases);
+      const baseResult = await runSubmission(codeForEvaluation, language, problem.testCases);
       const submittedAt = Date.now();
+      const teamName = room.players.map((player) => player.username).join(' + ');
       result = {
         ...baseResult,
-        socketId: socket.id,
-        username: submittedBy.username,
+        socketId: room.code,
+        username: teamName || submittedBy.username,
         submittedAt,
         timeToSolveMs: room.startedAt ? Math.max(0, submittedAt - room.startedAt) : undefined,
       };
     } catch (error) {
       const submittedAt = Date.now();
       result = {
-        socketId: socket.id,
-        username: submittedBy.username,
+        socketId: room.code,
+        username: room.players.map((player) => player.username).join(' + ') || submittedBy.username,
         passed: false,
         passedCount: 0,
         totalCount: problem.testCases.length,
@@ -143,13 +167,16 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
       };
     }
 
-    room.status = 'FINISHED';
-    clearRoomTurnTimer(roomCode);
-
     io.to(roomCode).emit('collab-result', result);
-    io.to(roomCode).emit('game-ended', {
-      winnerId: result.passed ? socket.id : undefined,
-      results: [result],
-    });
+
+    if (result.passed) {
+      room.codeState = codeForEvaluation;
+      room.status = 'FINISHED';
+      clearRoomTurnTimer(roomCode);
+      io.to(roomCode).emit('game-ended', {
+        winnerId: undefined,
+        results: [result],
+      });
+    }
   });
 }

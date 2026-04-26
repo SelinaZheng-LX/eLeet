@@ -21,7 +21,7 @@ export default function Home() {
     <div className="retro-screen scanlines">
       <div className="retro-shell">
         <div className="retro-hero">
-          <h1 className="retro-title">█▓▒░ LEET BATTLE ░▒▓█</h1>
+          <h1 className="retro-title">█▓▒░ BATTLE OF THE E-LEETS ░▒▓█</h1>
           <p className="retro-subtitle">Real-time competitive and collaborative coding</p>
         </div>
 

@@ -38,7 +38,7 @@ interface GameContextValue extends GameState {
   setVersusCode: (value: string) => void
   addCollabLine: (draftCode: string) => void
   submitVersus: () => void
-  submitCollab: () => void
+  submitCollab: (draftCode?: string) => void
   hydrateProblemForRoom: (roomCode: string) => Promise<void>
   resetGame: () => void
 }
@@ -407,7 +407,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           language: "python",
         })
       },
-      submitCollab() {
+      submitCollab(draftCode) {
         if (!state.roomCode) return
         if (!socket) {
           setState((prev) => ({
@@ -427,7 +427,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
           }))
           return
         }
-        socket.emit("submit-collab", { roomCode: state.roomCode, language: "python" })
+        socket.emit("submit-collab", {
+          roomCode: state.roomCode,
+          language: "python",
+          draftCode,
+        })
       },
       async hydrateProblemForRoom(roomCode) {
         const normalizedRoomCode = roomCode.trim().toUpperCase()
