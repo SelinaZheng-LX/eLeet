@@ -50,6 +50,37 @@ def build_tree(arr):
                 node.right = nodes[i]
                 i += 1
     return nodes[0]
+
+def serialize_tree(root):
+    if root is None:
+        return []
+    out = []
+    queue = [root]
+    while queue:
+        node = queue.pop(0)
+        if node is None:
+            out.append(None)
+            continue
+        out.append(node.val)
+        queue.append(node.left)
+        queue.append(node.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+def find_node(root, target):
+    if root is None:
+        return None
+    queue = [root]
+    while queue:
+        node = queue.pop(0)
+        if node is None:
+            continue
+        if node.val == target:
+            return node
+        queue.append(node.left)
+        queue.append(node.right)
+    return None
 `;
   }
 
@@ -81,15 +112,25 @@ function prepareSourceCode(sourceCode: string, language: string): string {
   const normalizedLanguage = language.toLowerCase();
   const lowerSource = sourceCode.toLowerCase();
   const shouldInjectTreeHelper =
-    sourceCode.includes('rightSideView') && (normalizedLanguage === 'python' || normalizedLanguage === 'javascript');
+    (sourceCode.includes('rightSideView') ||
+      sourceCode.includes('invertTree') ||
+      sourceCode.includes('lowestCommonAncestor')) &&
+    (normalizedLanguage === 'python' || normalizedLanguage === 'javascript');
 
   if (normalizedLanguage === 'python') {
     const pythonPreamble = shouldInjectTreeHelper ? buildTreePreamble(normalizedLanguage) : '';
     const needsTwoSumRunner = lowerSource.includes('def twosum(') || lowerSource.includes('def two_sum(');
     const needsContainsDuplicateRunner =
       lowerSource.includes('def containsduplicate(') || lowerSource.includes('def contains_duplicate(');
+    const needsValidPalindromeRunner =
+      lowerSource.includes('def ispalindrome(') || lowerSource.includes('def is_palindrome(');
     const needsRightSideViewRunner =
       lowerSource.includes('def rightsideview(') || lowerSource.includes('def right_side_view(');
+    const needsInvertTreeRunner =
+      lowerSource.includes('def inverttree(') || lowerSource.includes('def invert_tree(');
+    const needsLcaBstRunner =
+      lowerSource.includes('def lowestcommonancestor(') ||
+      lowerSource.includes('def lowest_common_ancestor(');
 
     let pythonRunner = '';
     if (needsTwoSumRunner) {
@@ -131,6 +172,25 @@ def __run_contains_duplicate():
 if __name__ == "__main__":
     __run_contains_duplicate()
 `;
+    } else if (needsValidPalindromeRunner) {
+      pythonRunner = `
+import json
+import sys
+
+def __run_valid_palindrome():
+    raw = sys.stdin.read().strip()
+    s = json.loads(raw) if raw else ""
+    if 'isPalindrome' in globals():
+      out = isPalindrome(s)
+    elif 'is_palindrome' in globals():
+      out = is_palindrome(s)
+    else:
+      raise NameError("Expected isPalindrome or is_palindrome function")
+    print(json.dumps(out))
+
+if __name__ == "__main__":
+    __run_valid_palindrome()
+`;
     } else if (needsRightSideViewRunner) {
       pythonRunner = `
 import json
@@ -150,6 +210,50 @@ def __run_right_side_view():
 
 if __name__ == "__main__":
     __run_right_side_view()
+`;
+    } else if (needsInvertTreeRunner) {
+      pythonRunner = `
+import json
+import sys
+
+def __run_invert_tree():
+    raw = sys.stdin.read().strip()
+    arr = json.loads(raw) if raw else []
+    root = build_tree(arr)
+    if 'invertTree' in globals():
+      out_root = invertTree(root)
+    elif 'invert_tree' in globals():
+      out_root = invert_tree(root)
+    else:
+      raise NameError("Expected invertTree or invert_tree function")
+    print(json.dumps(serialize_tree(out_root), separators=(",", ":")))
+
+if __name__ == "__main__":
+    __run_invert_tree()
+`;
+    } else if (needsLcaBstRunner) {
+      pythonRunner = `
+import json
+import sys
+
+def __run_lca_bst():
+    raw = [line for line in sys.stdin.read().splitlines() if line.strip()]
+    arr = json.loads(raw[0]) if len(raw) > 0 else []
+    p_val = json.loads(raw[1]) if len(raw) > 1 else None
+    q_val = json.loads(raw[2]) if len(raw) > 2 else None
+    root = build_tree(arr)
+    p_node = find_node(root, p_val)
+    q_node = find_node(root, q_val)
+    if 'lowestCommonAncestor' in globals():
+      out = lowestCommonAncestor(root, p_node, q_node)
+    elif 'lowest_common_ancestor' in globals():
+      out = lowest_common_ancestor(root, p_node, q_node)
+    else:
+      raise NameError("Expected lowestCommonAncestor or lowest_common_ancestor function")
+    print(json.dumps(out.val if out else None))
+
+if __name__ == "__main__":
+    __run_lca_bst()
 `;
     }
 
