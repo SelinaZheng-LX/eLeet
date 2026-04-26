@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import Home from "./pages/Home"
 import Lobby from "./pages/Lobby"
-import Match from "./pages/Match"
-import GeoMatch from "./pages/GeoMatch"
+import VersusGame from "./pages/VersusGame"
+import CollabGame from "./pages/CollabGame"
 import Results from "./pages/Results"
 
 export default function App() {
@@ -11,8 +11,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/lobby" element={<Lobby />} />
-        <Route path="/match" element={<Match />} />
-        <Route path="/geo-match" element={<GeoMatch />} />
+        <Route path="/versus" element={<VersusGame />} />
+        <Route path="/collab" element={<CollabGame />} />
         <Route path="/results" element={<Results />} />
       </Routes>
     </BrowserRouter>

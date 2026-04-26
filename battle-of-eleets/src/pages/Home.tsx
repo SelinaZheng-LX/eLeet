@@ -1,29 +1,63 @@
 import { useNavigate } from "react-router-dom"
+import { useState } from "react"
+import { useGame } from "../lib/gameContext"
 
 export default function Home() {
   const navigate = useNavigate()
+  const { createRoom, joinRoom } = useGame()
+  const [username, setUsername] = useState("")
+  const [roomCode, setRoomCode] = useState("")
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-6">
-      <h1 className="text-5xl font-bold">Battle of the eLeets</h1>
-      <p className="text-lg text-gray-600">
-        Real-time LeetCode battles with friends and nearby coders
-      </p>
+    <div className="retro-screen scanlines">
+      <div className="retro-shell">
+        <div className="retro-hero">
+          <h1 className="retro-title">█▓▒░ LEET BATTLE ░▒▓█</h1>
+          <p className="retro-subtitle">Real-time competitive and collaborative coding</p>
+        </div>
 
-      <div className="flex gap-4">
-        <button
-          onClick={() => navigate("/lobby")}
-          className="px-6 py-3 rounded-xl bg-black text-white"
-        >
-          Create Room
-        </button>
+        <div className="retro-panel">
+          <label className="retro-label" htmlFor="username">
+            ► Player Name
+          </label>
+          <input
+            id="username"
+            className="retro-input"
+            placeholder="ENTER USERNAME..."
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+          />
+        </div>
 
-        <button
-          onClick={() => navigate("/geo-match")}
-          className="px-6 py-3 rounded-xl border"
-        >
-          Find Nearby Players
-        </button>
+        <div className="retro-row">
+          <button
+            onClick={() => {
+              if (!username.trim()) return
+              createRoom(username.trim())
+              navigate("/lobby")
+            }}
+            className="retro-btn retro-btn-primary"
+          >
+            [ Create Room ]
+          </button>
+          <button
+            onClick={() => {
+              if (!username.trim() || !roomCode.trim()) return
+              joinRoom(roomCode.trim(), username.trim())
+              navigate("/lobby")
+            }}
+            className="retro-btn retro-btn-secondary"
+          >
+            [ Join Room ]
+          </button>
+        </div>
+        <input
+          className="retro-input retro-code-input"
+          placeholder="ENTER ROOM CODE"
+          value={roomCode}
+          onChange={(event) => setRoomCode(event.target.value.toUpperCase())}
+          maxLength={6}
+        />
       </div>
     </div>
   )

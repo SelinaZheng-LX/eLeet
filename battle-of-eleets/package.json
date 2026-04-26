@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:client": "vite",
+    "dev:server": "npm run --prefix server dev",
+    "dev:all": "concurrently -k -n client,server -c cyan,green \"npm run dev:client\" \"npm run dev:server\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -21,7 +24,8 @@
     "react-router-dom": "^7.14.2",
     "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.5.0",
-    "tailwindcss": "^4.2.4"
+    "tailwindcss": "^4.2.4",
+    "concurrently": "^9.2.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
