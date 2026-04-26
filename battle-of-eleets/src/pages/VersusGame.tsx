@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import Editor from "@monaco-editor/react"
 import { useGame } from "../lib/gameContext"
@@ -10,6 +10,8 @@ export default function VersusGame() {
     selectedProblem,
     versusCode,
     gameStarted,
+    gameStartedAt,
+    clockOffsetMs,
     currentUser,
     results,
     hydrateProblemForRoom,
@@ -20,6 +22,15 @@ export default function VersusGame() {
     ? results.find((result) => result.socketId === currentUser.socketId)
     : undefined
   const submittedCount = results.length
+  const [nowMs, setNowMs] = useState(Date.now())
+
+  const elapsedLabel = useMemo(() => {
+    if (!gameStartedAt) return "00:00"
+    const elapsed = Math.max(0, Math.floor(((nowMs + clockOffsetMs) - gameStartedAt) / 1000))
+    const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0")
+    const seconds = String(elapsed % 60).padStart(2, "0")
+    return `${minutes}:${seconds}`
+  }, [clockOffsetMs, gameStartedAt, nowMs])
 
   useEffect(() => {
     if (!gameStarted && results.length > 0) {
@@ -31,6 +42,11 @@ export default function VersusGame() {
     if (selectedProblem || !roomCode) return
     void hydrateProblemForRoom(roomCode)
   }, [hydrateProblemForRoom, roomCode, selectedProblem])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 500)
+    return () => window.clearInterval(timer)
+  }, [])
 
   if (!selectedProblem) {
     return (
@@ -45,7 +61,7 @@ export default function VersusGame() {
     <div className="retro-game-screen scanlines">
       <div className="retro-game-topbar">
         <h1>▓ LeetBattle</h1>
-        <span className="retro-tag">⚔ Versus Mode</span>
+        <span className="retro-tag">⚔ Versus Mode • {elapsedLabel}</span>
       </div>
       <div className="split retro-game-split">
         <section className="panel problem-panel retro-panel">

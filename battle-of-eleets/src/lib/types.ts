@@ -27,6 +27,7 @@ export interface SubmissionResult {
   passed: boolean
   passedCount: number
   totalCount: number
+  submittedAt?: number
   runtime?: number
   error?: string
 }
@@ -36,4 +37,5 @@ export interface Room {
   hostSocketId: string
   mode: GameMode | null
   problemId: string | null
+  startedAt?: number
 }

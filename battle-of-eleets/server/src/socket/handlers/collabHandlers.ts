@@ -85,6 +85,7 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
       passed: boolean;
       passedCount: number;
       totalCount: number;
+      submittedAt?: number;
       runtime?: number;
       error?: string;
     };
@@ -95,6 +96,7 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
         ...baseResult,
         socketId: socket.id,
         username: submittedBy.username,
+        submittedAt: Date.now(),
       };
     } catch (error) {
       result = {
@@ -103,6 +105,7 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
         passed: false,
         passedCount: 0,
         totalCount: problem.testCases.length,
+        submittedAt: Date.now(),
         error: error instanceof Error ? error.message : 'Submission failed',
       };
     }

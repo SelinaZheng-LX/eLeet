@@ -34,6 +34,7 @@ export interface SubmissionResult {
   passed: boolean;
   passedCount: number;
   totalCount: number;
+  submittedAt?: number;
   runtime?: number;
   error?: string;
 }
@@ -50,6 +51,7 @@ export interface Room {
   currentTurnSocketId?: string;
   turnNumber?: number;
   turnHistory?: TurnEntry[];
+  startedAt?: number;
 }
 
 export interface SocketEvents {
@@ -67,7 +69,7 @@ export interface SocketEvents {
   'player-left': { players: Player[] };
   'mode-selected': { mode: GameMode };
   'problem-selected': { problem: Problem };
-  'game-started': { room: Room };
+  'game-started': { room: Room; serverNow: number };
   'submission-result': SubmissionResult;
   'game-ended': { winnerId?: string; results: SubmissionResult[] };
   'turn-changed': { currentTurnSocketId: string; turnNumber: number };

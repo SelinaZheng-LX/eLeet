@@ -6,6 +6,10 @@ export default function Results() {
   const { results, resetGame } = useGame()
 
   const winner = results.find((result) => result.passed)
+  const formatSubmittedAt = (submittedAt?: number) => {
+    if (!submittedAt) return "N/A"
+    return new Date(submittedAt).toLocaleTimeString()
+  }
 
   return (
     <div className="retro-screen scanlines">
@@ -31,6 +35,7 @@ export default function Results() {
                   Tests: {result.passedCount}/{result.totalCount}
                   {result.runtime ? ` • ${result.runtime}ms` : ""}
                 </p>
+                <p>Submitted at: {formatSubmittedAt(result.submittedAt)}</p>
               </li>
             ))}
             {results.length === 0 ? <li className="retro-list-empty">Submit code to see results.</li> : null}

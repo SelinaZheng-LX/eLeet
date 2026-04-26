@@ -24,6 +24,8 @@ interface GameState {
   collabCode: string
   collabTurnNumber: number
   currentTurnSocketId: string | null
+  gameStartedAt: number | null
+  clockOffsetMs: number
   results: SubmissionResult[]
 }
 
@@ -53,6 +55,8 @@ const DEFAULT_STATE: GameState = {
   collabCode: "",
   collabTurnNumber: 1,
   currentTurnSocketId: null,
+  gameStartedAt: null,
+  clockOffsetMs: 0,
   results: [],
 }
 
@@ -124,6 +128,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const handleGameStarted = ({
       room,
+      serverNow,
     }: {
       room: {
         mode: GameMode | null
@@ -131,7 +136,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         codeState?: string
         currentTurnSocketId?: string
         turnNumber?: number
+        startedAt?: number
       }
+      serverNow?: number
     }) => {
       setState((prev) => {
         const resolvedProblem =
@@ -148,6 +155,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             room.codeState ?? resolvedProblem?.starterCode.python ?? prev.collabCode,
           currentTurnSocketId: room.currentTurnSocketId ?? null,
           collabTurnNumber: room.turnNumber ?? 1,
+          gameStartedAt: room.startedAt ?? prev.gameStartedAt,
+          clockOffsetMs: (serverNow ?? Date.now()) - Date.now(),
         }
       })
 
@@ -247,6 +256,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             mode: null,
             selectedProblem: null,
             gameStarted: false,
+            gameStartedAt: null,
+            clockOffsetMs: 0,
             results: [],
           }))
           return
@@ -259,6 +270,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
           mode: null,
           selectedProblem: null,
           gameStarted: false,
+          gameStartedAt: null,
+          clockOffsetMs: 0,
           results: [],
         }))
         socket.emit("create-room", { username: cleanUsername })
@@ -278,6 +291,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             mode: null,
             selectedProblem: null,
             gameStarted: false,
+            gameStartedAt: null,
+            clockOffsetMs: 0,
             results: [],
           }))
           return
@@ -290,6 +305,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
           mode: null,
           selectedProblem: null,
           gameStarted: false,
+          gameStartedAt: null,
+          clockOffsetMs: 0,
           results: [],
         }))
         socket.emit("join-room", { roomCode: normalizedRoomCode, username: cleanUsername })
@@ -321,9 +338,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
       startGame() {
         if (!state.roomCode || !state.mode || !state.selectedProblem) return null
         if (!socket) {
+          const now = Date.now()
           setState((prev) => ({
             ...prev,
             gameStarted: true,
+            gameStartedAt: now,
+            clockOffsetMs: 0,
             currentTurnSocketId: prev.players[0]?.socketId ?? null,
             collabTurnNumber: 1,
           }))
@@ -360,6 +380,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             passed: index === 0,
             passedCount: index === 0 ? 2 : 1,
             totalCount: 2,
+            submittedAt: Date.now(),
             runtime: index === 0 ? 120 : 300,
           }))
           setState((prev) => ({ ...prev, results: mockResults, gameStarted: false }))
@@ -383,6 +404,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 passed: true,
                 passedCount: 2,
                 totalCount: 2,
+                submittedAt: Date.now(),
                 runtime: 180,
               },
             ],

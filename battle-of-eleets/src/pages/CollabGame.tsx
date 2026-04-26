@@ -17,18 +17,28 @@ export default function CollabGame() {
     currentTurnSocketId,
     collabTurnNumber,
     gameStarted,
+    gameStartedAt,
+    clockOffsetMs,
     results,
     hydrateProblemForRoom,
     addCollabLine,
     submitCollab,
   } = useGame()
   const [lineInput, setLineInput] = useState("")
+  const [nowMs, setNowMs] = useState(Date.now())
 
   const isMyTurn = currentUser?.socketId === currentTurnSocketId
   const currentTurnName = useMemo(
     () => players.find((player) => player.socketId === currentTurnSocketId)?.username ?? "Teammate",
     [currentTurnSocketId, players],
   )
+  const elapsedLabel = useMemo(() => {
+    if (!gameStartedAt) return "00:00"
+    const elapsed = Math.max(0, Math.floor(((nowMs + clockOffsetMs) - gameStartedAt) / 1000))
+    const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0")
+    const seconds = String(elapsed % 60).padStart(2, "0")
+    return `${minutes}:${seconds}`
+  }, [clockOffsetMs, gameStartedAt, nowMs])
 
   useEffect(() => {
     if (!gameStarted && results.length > 0) {
@@ -40,6 +50,11 @@ export default function CollabGame() {
     if (selectedProblem || !roomCode) return
     void hydrateProblemForRoom(roomCode)
   }, [hydrateProblemForRoom, roomCode, selectedProblem])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 500)
+    return () => window.clearInterval(timer)
+  }, [])
 
   if (!selectedProblem) {
     return (
@@ -54,7 +69,7 @@ export default function CollabGame() {
     <div className="retro-game-screen scanlines">
       <div className="retro-game-topbar">
         <h1>▓ LeetBattle</h1>
-        <span className="retro-tag">🤝 Collab Mode</span>
+        <span className="retro-tag">🤝 Collab Mode • {elapsedLabel}</span>
       </div>
       <div className={`banner ${isMyTurn ? "your-turn" : "waiting"}`}>
         {isMyTurn ? "Your turn" : `Waiting for ${currentTurnName}...`} | Turn {collabTurnNumber} |{" "}

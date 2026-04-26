@@ -26,6 +26,7 @@ export function registerVersusHandlers(io: SocketServer, socket: ClientSocket): 
       passed: boolean;
       passedCount: number;
       totalCount: number;
+      submittedAt?: number;
       runtime?: number;
       error?: string;
     };
@@ -36,6 +37,7 @@ export function registerVersusHandlers(io: SocketServer, socket: ClientSocket): 
         ...baseResult,
         socketId: socket.id,
         username: player.username,
+        submittedAt: Date.now(),
       };
     } catch (error) {
       result = {
@@ -44,6 +46,7 @@ export function registerVersusHandlers(io: SocketServer, socket: ClientSocket): 
         passed: false,
         passedCount: 0,
         totalCount: problem.testCases.length,
+        submittedAt: Date.now(),
         error: error instanceof Error ? error.message : 'Submission failed',
       };
     }

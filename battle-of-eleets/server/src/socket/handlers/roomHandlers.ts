@@ -71,6 +71,8 @@ export function registerRoomHandlers(io: SocketServer, socket: ClientSocket): vo
     }
 
     room.status = 'IN_GAME';
+    const now = Date.now();
+    room.startedAt = now;
 
     if (room.mode === 'VERSUS') {
       room.submissions = {};
@@ -84,7 +86,7 @@ export function registerRoomHandlers(io: SocketServer, socket: ClientSocket): vo
       scheduleTurnTimer(io, roomCode);
     }
 
-    io.to(roomCode).emit('game-started', { room });
+    io.to(roomCode).emit('game-started', { room, serverNow: now });
   });
 
   socket.on('disconnect', () => {
