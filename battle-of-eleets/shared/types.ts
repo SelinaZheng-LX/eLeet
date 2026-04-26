@@ -35,6 +35,7 @@ export interface SubmissionResult {
   passedCount: number;
   totalCount: number;
   submittedAt?: number;
+  timeToSolveMs?: number;
   runtime?: number;
   error?: string;
 }

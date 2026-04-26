@@ -86,26 +86,31 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
       passedCount: number;
       totalCount: number;
       submittedAt?: number;
+      timeToSolveMs?: number;
       runtime?: number;
       error?: string;
     };
 
     try {
       const baseResult = await runSubmission(room.codeState ?? '', language, problem.testCases);
+      const submittedAt = Date.now();
       result = {
         ...baseResult,
         socketId: socket.id,
         username: submittedBy.username,
-        submittedAt: Date.now(),
+        submittedAt,
+        timeToSolveMs: room.startedAt ? Math.max(0, submittedAt - room.startedAt) : undefined,
       };
     } catch (error) {
+      const submittedAt = Date.now();
       result = {
         socketId: socket.id,
         username: submittedBy.username,
         passed: false,
         passedCount: 0,
         totalCount: problem.testCases.length,
-        submittedAt: Date.now(),
+        submittedAt,
+        timeToSolveMs: room.startedAt ? Math.max(0, submittedAt - room.startedAt) : undefined,
         error: error instanceof Error ? error.message : 'Submission failed',
       };
     }

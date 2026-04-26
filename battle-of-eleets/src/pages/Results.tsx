@@ -6,9 +6,12 @@ export default function Results() {
   const { results, resetGame } = useGame()
 
   const winner = results.find((result) => result.passed)
-  const formatSubmittedAt = (submittedAt?: number) => {
-    if (!submittedAt) return "N/A"
-    return new Date(submittedAt).toLocaleTimeString()
+  const formatElapsed = (timeToSolveMs?: number) => {
+    if (typeof timeToSolveMs !== "number") return "N/A"
+    const totalSeconds = Math.max(0, Math.floor(timeToSolveMs / 1000))
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0")
+    const seconds = String(totalSeconds % 60).padStart(2, "0")
+    return `${minutes}:${seconds}`
   }
 
   return (
@@ -35,7 +38,7 @@ export default function Results() {
                   Tests: {result.passedCount}/{result.totalCount}
                   {result.runtime ? ` • ${result.runtime}ms` : ""}
                 </p>
-                <p>Submitted at: {formatSubmittedAt(result.submittedAt)}</p>
+                <p>Solve time: {result.passed ? formatElapsed(result.timeToSolveMs) : "N/A"}</p>
               </li>
             ))}
             {results.length === 0 ? <li className="retro-list-empty">Submit code to see results.</li> : null}
