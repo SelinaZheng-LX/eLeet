@@ -414,7 +414,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
       },
       resetGame() {
-        setState(DEFAULT_STATE)
+        setState((prev) => ({
+          ...DEFAULT_STATE,
+          problems: prev.problems,
+        }))
       },
     }),
     [state],
