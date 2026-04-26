@@ -36,7 +36,7 @@ interface GameContextValue extends GameState {
   selectProblem: (problemId: string) => void
   startGame: () => GameMode | null
   setVersusCode: (value: string) => void
-  addCollabLine: (line: string) => void
+  addCollabLine: (draftCode: string) => void
   submitVersus: () => void
   submitCollab: () => void
   hydrateProblemForRoom: (roomCode: string) => Promise<void>
@@ -360,15 +360,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setVersusCode(value) {
         setState((prev) => ({ ...prev, versusCode: value }))
       },
-      addCollabLine(line) {
-        if (!state.roomCode || !line.trim()) return
+      addCollabLine(draftCode) {
+        if (!state.roomCode || !draftCode.trim()) return
         if (!socket) {
+          const base = state.collabCode.replace(/\r/g, "")
+          const draft = draftCode.replace(/\r/g, "")
+          if (!draft.startsWith(base)) return
+          let suffix = draft.slice(base.length)
+          if (suffix.startsWith("\n")) suffix = suffix.slice(1)
+          if (suffix.endsWith("\n")) suffix = suffix.slice(0, -1)
+          if (!suffix || suffix.includes("\n")) return
           const nextTurnId =
             state.players.find((player) => player.socketId !== state.currentTurnSocketId)?.socketId ??
             state.currentTurnSocketId
           setState((prev) => ({
             ...prev,
-            collabCode: prev.collabCode ? `${prev.collabCode}\n${line}` : line,
+            collabCode: `${prev.collabCode}${prev.collabCode.endsWith("\n") ? "" : "\n"}${suffix}\n`,
             currentTurnSocketId: nextTurnId ?? null,
             collabTurnNumber: prev.collabTurnNumber + 1,
           }))
@@ -376,8 +383,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
         socket.emit("add-line", {
           roomCode: state.roomCode,
-          line,
-          baseCode: state.collabCode,
+          draftCode,
         })
       },
       submitVersus() {

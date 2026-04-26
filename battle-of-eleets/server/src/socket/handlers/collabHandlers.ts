@@ -14,8 +14,29 @@ function getOtherPlayerSocketId(roomCode: string, socketId: string): string | nu
   return otherPlayer?.socketId ?? null;
 }
 
+function extractSingleAppendedLine(baseCode: string, draftCode: string): string | null {
+  const normalizedBase = baseCode.replace(/\r/g, '');
+  const normalizedDraft = draftCode.replace(/\r/g, '');
+  if (!normalizedDraft.startsWith(normalizedBase)) {
+    return null;
+  }
+
+  let suffix = normalizedDraft.slice(normalizedBase.length);
+  if (suffix.startsWith('\n')) {
+    suffix = suffix.slice(1);
+  }
+  if (suffix.endsWith('\n')) {
+    suffix = suffix.slice(0, -1);
+  }
+
+  if (!suffix || suffix.includes('\n') || suffix.trim().length === 0) {
+    return null;
+  }
+  return suffix;
+}
+
 export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): void {
-  socket.on('add-line', ({ roomCode, line, baseCode }) => {
+  socket.on('add-line', ({ roomCode, draftCode }) => {
     const room = rooms.get(roomCode);
     if (!room || room.mode !== 'COLLAB' || room.status !== 'IN_GAME') {
       return;
@@ -30,25 +51,20 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
       return;
     }
 
-    const normalizedLine = String(line ?? '').replace(/\r/g, '').split('\n')[0].trimEnd();
-    if (!normalizedLine) {
+    const problem = problems.find((entry) => entry.id === room.problemId);
+    const starterCode = problem?.starterCode.python ?? '';
+    const baseCode = room.codeState && room.codeState.length > 0 ? room.codeState : starterCode;
+    const line = extractSingleAppendedLine(baseCode, String(draftCode ?? ''));
+    if (!line) {
       return;
     }
 
-    const normalizedBaseCode = String(baseCode ?? '').replace(/\r/g, '');
-    const hasRoomCodeState = typeof room.codeState === 'string' && room.codeState.trim().length > 0;
-    const effectiveBaseCode = hasRoomCodeState
-      ? room.codeState ?? ''
-      : normalizedBaseCode;
-
-    const nextCodeState = effectiveBaseCode
-      ? `${effectiveBaseCode}\n${normalizedLine}`
-      : normalizedLine;
+    const nextCodeState = `${baseCode}${baseCode.endsWith('\n') ? '' : '\n'}${line}\n`;
     const turnNumber = room.turnNumber ?? 1;
     const turnEntry: TurnEntry = {
       socketId: socket.id,
       username: player.username,
-      line: normalizedLine,
+      line,
       turnNumber,
     };
 

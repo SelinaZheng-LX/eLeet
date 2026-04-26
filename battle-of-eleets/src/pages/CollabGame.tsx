@@ -4,8 +4,6 @@ import { useNavigate } from "react-router-dom"
 import Editor from "@monaco-editor/react"
 import { useGame } from "../lib/gameContext"
 
-const TURN_SECONDS = 30
-
 export default function CollabGame() {
   const navigate = useNavigate()
   const {
@@ -17,28 +15,18 @@ export default function CollabGame() {
     currentTurnSocketId,
     collabTurnNumber,
     gameStarted,
-    gameStartedAt,
-    clockOffsetMs,
     results,
     hydrateProblemForRoom,
     addCollabLine,
     submitCollab,
   } = useGame()
-  const [lineInput, setLineInput] = useState("")
-  const [nowMs, setNowMs] = useState(Date.now())
+  const [editorCode, setEditorCode] = useState(collabCode)
 
   const isMyTurn = currentUser?.socketId === currentTurnSocketId
   const currentTurnName = useMemo(
     () => players.find((player) => player.socketId === currentTurnSocketId)?.username ?? "Teammate",
     [currentTurnSocketId, players],
   )
-  const elapsedLabel = useMemo(() => {
-    if (!gameStartedAt) return "00:00"
-    const elapsed = Math.max(0, Math.floor(((nowMs + clockOffsetMs) - gameStartedAt) / 1000))
-    const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0")
-    const seconds = String(elapsed % 60).padStart(2, "0")
-    return `${minutes}:${seconds}`
-  }, [clockOffsetMs, gameStartedAt, nowMs])
 
   useEffect(() => {
     if (!gameStarted && results.length > 0) {
@@ -52,9 +40,24 @@ export default function CollabGame() {
   }, [hydrateProblemForRoom, roomCode, selectedProblem])
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNowMs(Date.now()), 500)
-    return () => window.clearInterval(timer)
-  }, [])
+    setEditorCode(collabCode)
+  }, [collabCode])
+
+  const pendingLine = useMemo(() => {
+    const base = collabCode.replace(/\r/g, "")
+    const draft = editorCode.replace(/\r/g, "")
+    if (draft === base || !draft.startsWith(base)) return null
+
+    let suffix = draft.slice(base.length)
+    if (suffix.startsWith("\n")) {
+      suffix = suffix.slice(1)
+    }
+    if (suffix.endsWith("\n")) {
+      suffix = suffix.slice(0, -1)
+    }
+    if (!suffix || suffix.includes("\n") || suffix.trim().length === 0) return null
+    return suffix
+  }, [collabCode, editorCode])
 
   if (!selectedProblem) {
     return (
@@ -69,11 +72,10 @@ export default function CollabGame() {
     <div className="retro-game-screen scanlines">
       <div className="retro-game-topbar">
         <h1>▓ LeetBattle</h1>
-        <span className="retro-tag">🤝 Collab Mode • {elapsedLabel}</span>
+        <span className="retro-tag">🤝 Collab Mode</span>
       </div>
       <div className={`banner ${isMyTurn ? "your-turn" : "waiting"}`}>
-        {isMyTurn ? "Your turn" : `Waiting for ${currentTurnName}...`} | Turn {collabTurnNumber} |{" "}
-        {TURN_SECONDS}s
+        {isMyTurn ? "Your turn" : `Waiting for ${currentTurnName}...`} | Turn {collabTurnNumber}
       </div>
       <div className="split retro-game-split">
         <section className="panel problem-panel retro-panel">
@@ -107,30 +109,27 @@ export default function CollabGame() {
           <Editor
             height="100%"
             language="python"
-            value={collabCode}
+            value={editorCode}
+            onChange={(value) => {
+              if (!isMyTurn) return
+              setEditorCode(value ?? "")
+            }}
             theme="vs-dark"
             options={{
               minimap: { enabled: false },
-              readOnly: true,
+              readOnly: !isMyTurn,
               fontSize: 14,
               scrollBeyondLastLine: false,
               padding: { top: 12 },
             }}
           />
           <div className="row">
-            <input
-              className="input"
-              value={lineInput}
-              onChange={(event) => setLineInput(event.target.value)}
-              placeholder="Type one line of code"
-              disabled={!isMyTurn}
-            />
             <button
               className="button secondary"
-              disabled={!isMyTurn || !lineInput.trim()}
+              disabled={!isMyTurn || !pendingLine}
               onClick={() => {
-                addCollabLine(lineInput)
-                setLineInput("")
+                if (!pendingLine) return
+                addCollabLine(editorCode)
               }}
             >
               Add Line
@@ -144,6 +143,9 @@ export default function CollabGame() {
               Submit Team Code
             </button>
           </div>
+          <p className="submission-meta">
+            Add exactly one appended line (indentation/comments allowed), then click Add Line.
+          </p>
         </section>
       </div>
     </div>
