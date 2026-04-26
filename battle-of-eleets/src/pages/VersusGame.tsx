@@ -10,11 +10,16 @@ export default function VersusGame() {
     selectedProblem,
     versusCode,
     gameStarted,
+    currentUser,
     results,
     hydrateProblemForRoom,
     setVersusCode,
     submitVersus,
   } = useGame()
+  const myResult = currentUser
+    ? results.find((result) => result.socketId === currentUser.socketId)
+    : undefined
+  const submittedCount = results.length
 
   useEffect(() => {
     if (!gameStarted && results.length > 0) {
@@ -93,6 +98,19 @@ export default function VersusGame() {
           >
             Submit Code
           </button>
+          {myResult ? (
+            <div className={`submission-feedback ${myResult.passed ? "pass" : "fail"}`}>
+              <p className="submission-title">
+                {myResult.passed ? "Passed" : "Failed"} {myResult.passedCount}/{myResult.totalCount} testcases
+              </p>
+              {myResult.error ? <p className="submission-error">{myResult.error}</p> : null}
+              <p className="submission-meta">
+                Players submitted: {submittedCount}/2
+              </p>
+            </div>
+          ) : (
+            <p className="submission-meta">No submission yet.</p>
+          )}
         </section>
       </div>
     </div>

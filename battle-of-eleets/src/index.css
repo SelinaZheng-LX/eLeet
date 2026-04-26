@@ -527,6 +527,38 @@ h2 {
   gap: 0.5rem;
 }
 
+.submission-feedback {
+  border: 3px solid #111827;
+  padding: 0.65rem 0.75rem;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.submission-feedback.pass {
+  background: #dcfce7;
+}
+
+.submission-feedback.fail {
+  background: #fee2e2;
+}
+
+.submission-title {
+  font-weight: 700;
+}
+
+.submission-error {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.83rem;
+  white-space: pre-wrap;
+}
+
+.submission-meta {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
 @media (max-width: 900px) {
   .retro-screen,
   .retro-game-screen {
