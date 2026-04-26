@@ -5,7 +5,9 @@ export default function Results() {
   const navigate = useNavigate()
   const { results, resetGame } = useGame()
 
-  const winner = results.find((result) => result.passed)
+  const winner = results
+    .filter((result) => result.passed && typeof result.timeToSolveMs === "number")
+    .sort((a, b) => (a.timeToSolveMs ?? Number.POSITIVE_INFINITY) - (b.timeToSolveMs ?? Number.POSITIVE_INFINITY))[0]
   const formatElapsed = (timeToSolveMs?: number) => {
     if (typeof timeToSolveMs !== "number") return "N/A"
     const totalSeconds = Math.max(0, Math.floor(timeToSolveMs / 1000))
