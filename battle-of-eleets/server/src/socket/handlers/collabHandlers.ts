@@ -124,10 +124,21 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
 
     const starterCode = problem.starterCode.python ?? '';
     const baseCode = room.codeState && room.codeState.length > 0 ? room.codeState : starterCode;
-    const maybeNextState = typeof draftCode === 'string'
-      ? buildNextCollabState(baseCode, draftCode)
-      : null;
-    const codeForEvaluation = maybeNextState?.nextCodeState ?? baseCode;
+    const codeForEvaluation = typeof draftCode === 'string' && draftCode.length > 0
+      ? (draftCode.replace(/\r/g, '').endsWith('\n')
+          ? draftCode.replace(/\r/g, '')
+          : `${draftCode.replace(/\r/g, '')}\n`)
+      : baseCode;
+    room.codeState = codeForEvaluation;
+    io.to(roomCode).emit('code-updated', {
+      codeState: codeForEvaluation,
+      lastLine: {
+        socketId: socket.id,
+        username: submittedBy.username,
+        line: '[submitted]',
+        turnNumber: room.turnNumber ?? 1,
+      },
+    });
 
     let result: {
       socketId: string;
@@ -169,7 +180,6 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
     io.to(roomCode).emit('collab-result', result);
 
     if (result.passed) {
-      room.codeState = codeForEvaluation;
       room.status = 'FINISHED';
       clearRoomTurnTimer(roomCode);
       io.to(roomCode).emit('game-ended', {
