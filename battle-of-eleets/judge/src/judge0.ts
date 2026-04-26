@@ -168,21 +168,29 @@ export async function runOnJudge0(sourceCode: string, stdin: string, language: s
     headers['X-RapidAPI-Host'] = url.host;
   }
 
-  const response = await fetch(url.toString(), {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      source_code: prepareSourceCode(sourceCode, normalizedLanguage),
-      language_id: getLanguageId(normalizedLanguage),
-      stdin,
-    }),
-  });
+  try {
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        source_code: prepareSourceCode(sourceCode, normalizedLanguage),
+        language_id: getLanguageId(normalizedLanguage),
+        stdin,
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Judge0 request failed with status ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Judge0 request failed with status ${response.status}`);
+    }
+
+    return (await response.json()) as RunResult;
+  } catch (error) {
+    // Network/API instability should not block local development gameplay.
+    if (normalizedLanguage === 'python') {
+      return runOnLocalPython(sourceCode, stdin, normalizedLanguage);
+    }
+    throw error;
   }
-
-  return (await response.json()) as RunResult;
 }
 
 function runOnLocalPython(sourceCode: string, stdin: string, language: string): Promise<RunResult> {
