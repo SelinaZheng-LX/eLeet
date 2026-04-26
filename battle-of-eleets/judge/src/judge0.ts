@@ -86,6 +86,8 @@ function prepareSourceCode(sourceCode: string, language: string): string {
   if (normalizedLanguage === 'python') {
     const pythonPreamble = shouldInjectTreeHelper ? buildTreePreamble(normalizedLanguage) : '';
     const needsTwoSumRunner = lowerSource.includes('def twosum(') || lowerSource.includes('def two_sum(');
+    const needsContainsDuplicateRunner =
+      lowerSource.includes('def containsduplicate(') || lowerSource.includes('def contains_duplicate(');
     const needsRightSideViewRunner =
       lowerSource.includes('def rightsideview(') || lowerSource.includes('def right_side_view(');
 
@@ -109,6 +111,25 @@ def __run_two_sum():
 
 if __name__ == "__main__":
     __run_two_sum()
+`;
+    } else if (needsContainsDuplicateRunner) {
+      pythonRunner = `
+import json
+import sys
+
+def __run_contains_duplicate():
+    raw = sys.stdin.read().strip()
+    nums = json.loads(raw) if raw else []
+    if 'containsDuplicate' in globals():
+      out = containsDuplicate(nums)
+    elif 'contains_duplicate' in globals():
+      out = contains_duplicate(nums)
+    else:
+      raise NameError("Expected containsDuplicate or contains_duplicate function")
+    print(json.dumps(out))
+
+if __name__ == "__main__":
+    __run_contains_duplicate()
 `;
     } else if (needsRightSideViewRunner) {
       pythonRunner = `

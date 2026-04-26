@@ -44,10 +44,31 @@ export default function CollabGame() {
     setEditorCode(collabCode)
   }, [collabCode])
 
-  const hasTurnEdits = useMemo(() => {
+  const canSubmitTurn = useMemo(() => {
     const base = collabCode.replace(/\r/g, "")
     const draft = editorCode.replace(/\r/g, "")
-    return draft !== base
+    if (draft === base) return false
+
+    const baseLines = base.split("\n")
+    const draftLines = draft.split("\n")
+    const baseFreq = new Map<string, number>()
+    const draftFreq = new Map<string, number>()
+
+    for (const line of baseLines) {
+      if (!line.trim()) continue
+      baseFreq.set(line, (baseFreq.get(line) ?? 0) + 1)
+    }
+    for (const line of draftLines) {
+      if (!line.trim()) continue
+      draftFreq.set(line, (draftFreq.get(line) ?? 0) + 1)
+    }
+
+    let addedNonEmptyLines = 0
+    for (const [line, count] of draftFreq.entries()) {
+      const prev = baseFreq.get(line) ?? 0
+      if (count > prev) addedNonEmptyLines += count - prev
+    }
+    return addedNonEmptyLines <= 1
   }, [collabCode, editorCode])
 
   if (!selectedProblem) {
@@ -117,9 +138,9 @@ export default function CollabGame() {
           <div className="row">
             <button
               className="button secondary"
-              disabled={!isMyTurn || !hasTurnEdits}
+              disabled={!isMyTurn || !canSubmitTurn}
               onClick={() => {
-                if (!hasTurnEdits) return
+                if (!canSubmitTurn) return
                 addCollabLine(editorCode)
               }}
             >

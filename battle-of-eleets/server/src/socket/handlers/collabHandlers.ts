@@ -24,14 +24,31 @@ function buildNextCollabState(
     return null;
   }
 
-  // Allow free deletions/edits, but cap newly added non-empty lines per turn.
-  const baseNonEmptyLineCount = normalizedBase
-    .split('\n')
-    .filter((line) => line.trim().length > 0).length;
-  const draftNonEmptyLineCount = normalizedDraft
-    .split('\n')
-    .filter((line) => line.trim().length > 0).length;
-  if (draftNonEmptyLineCount - baseNonEmptyLineCount > 1) {
+  // Allow free deletions/edits, but cap each turn to one newly added non-empty line.
+  const baseLines = normalizedBase.split('\n');
+  const draftLines = normalizedDraft.split('\n');
+  const baseFreq = new Map<string, number>();
+  const draftFreq = new Map<string, number>();
+
+  for (const line of baseLines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    baseFreq.set(line, (baseFreq.get(line) ?? 0) + 1);
+  }
+  for (const line of draftLines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    draftFreq.set(line, (draftFreq.get(line) ?? 0) + 1);
+  }
+
+  let addedNonEmptyLines = 0;
+  for (const [line, count] of draftFreq.entries()) {
+    const prev = baseFreq.get(line) ?? 0;
+    if (count > prev) {
+      addedNonEmptyLines += count - prev;
+    }
+  }
+  if (addedNonEmptyLines > 1) {
     return null;
   }
 
@@ -39,8 +56,6 @@ function buildNextCollabState(
     ? normalizedDraft
     : `${normalizedDraft}\n`;
 
-  const baseLines = normalizedBase.split('\n');
-  const draftLines = normalizedDraft.split('\n');
   const changedLine =
     draftLines.find((line, index) => line !== (baseLines[index] ?? '')) ?? '';
   const lineForHistory = changedLine.trim().length > 0 ? changedLine : '[edited turn]';
