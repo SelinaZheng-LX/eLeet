@@ -20,35 +20,34 @@ function buildNextCollabState(
 ): { nextCodeState: string; lineForHistory: string } | null {
   const normalizedBase = baseCode.replace(/\r/g, '');
   const normalizedDraft = draftCode.replace(/\r/g, '');
-  if (!normalizedDraft.startsWith(normalizedBase)) {
+  if (normalizedDraft === normalizedBase) {
     return null;
   }
 
-  let suffix = normalizedDraft.slice(normalizedBase.length);
-  let startedOnNewLine = false;
-  if (suffix.startsWith('\n')) {
-    suffix = suffix.slice(1);
-    startedOnNewLine = true;
-  }
-  if (suffix.endsWith('\n')) {
-    suffix = suffix.slice(0, -1);
-  }
-
-  if (!suffix || suffix.includes('\n') || suffix.trim().length === 0) {
+  // Allow free deletions/edits, but cap newly added non-empty lines per turn.
+  const baseNonEmptyLineCount = normalizedBase
+    .split('\n')
+    .filter((line) => line.trim().length > 0).length;
+  const draftNonEmptyLineCount = normalizedDraft
+    .split('\n')
+    .filter((line) => line.trim().length > 0).length;
+  if (draftNonEmptyLineCount - baseNonEmptyLineCount > 1) {
     return null;
   }
 
-  // Preserve exact indentation/content from editor draft. Only enforce
-  // one submitted logical line and ensure shared state ends with newline.
-  const appendedSegment = `${startedOnNewLine ? '\n' : ''}${suffix}`;
-  const nextCodeStateRaw = `${normalizedBase}${appendedSegment}`;
-  const nextCodeState = nextCodeStateRaw.endsWith('\n')
-    ? nextCodeStateRaw
-    : `${nextCodeStateRaw}\n`;
+  const nextCodeState = normalizedDraft.endsWith('\n')
+    ? normalizedDraft
+    : `${normalizedDraft}\n`;
+
+  const baseLines = normalizedBase.split('\n');
+  const draftLines = normalizedDraft.split('\n');
+  const changedLine =
+    draftLines.find((line, index) => line !== (baseLines[index] ?? '')) ?? '';
+  const lineForHistory = changedLine.trim().length > 0 ? changedLine : '[edited turn]';
 
   return {
     nextCodeState,
-    lineForHistory: suffix,
+    lineForHistory,
   };
 }
 

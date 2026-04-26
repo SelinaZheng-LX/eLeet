@@ -44,20 +44,10 @@ export default function CollabGame() {
     setEditorCode(collabCode)
   }, [collabCode])
 
-  const pendingLine = useMemo(() => {
+  const hasTurnEdits = useMemo(() => {
     const base = collabCode.replace(/\r/g, "")
     const draft = editorCode.replace(/\r/g, "")
-    if (draft === base || !draft.startsWith(base)) return null
-
-    let suffix = draft.slice(base.length)
-    if (suffix.startsWith("\n")) {
-      suffix = suffix.slice(1)
-    }
-    if (suffix.endsWith("\n")) {
-      suffix = suffix.slice(0, -1)
-    }
-    if (!suffix || suffix.includes("\n") || suffix.trim().length === 0) return null
-    return suffix
+    return draft !== base
   }, [collabCode, editorCode])
 
   if (!selectedProblem) {
@@ -72,7 +62,7 @@ export default function CollabGame() {
   return (
     <div className="retro-game-screen scanlines">
       <div className="retro-game-topbar">
-        <h1>▓ LeetBattle</h1>
+        <h1>▓ Battle of The e-Leets</h1>
         <span className="retro-tag">🤝 Collab Mode</span>
       </div>
       <div className={`banner ${isMyTurn ? "your-turn" : "waiting"}`}>
@@ -127,9 +117,9 @@ export default function CollabGame() {
           <div className="row">
             <button
               className="button secondary"
-              disabled={!isMyTurn || !pendingLine}
+              disabled={!isMyTurn || !hasTurnEdits}
               onClick={() => {
-                if (!pendingLine) return
+                if (!hasTurnEdits) return
                 addCollabLine(editorCode)
               }}
             >
@@ -153,7 +143,7 @@ export default function CollabGame() {
             </div>
           ) : null}
           <p className="submission-meta">
-            Add exactly one appended line (indentation/comments allowed), then click Add Line.
+            You can edit/delete existing code; each turn allows at most one new non-empty line.
           </p>
         </section>
       </div>

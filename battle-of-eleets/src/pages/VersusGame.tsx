@@ -60,7 +60,7 @@ export default function VersusGame() {
   return (
     <div className="retro-game-screen scanlines">
       <div className="retro-game-topbar">
-        <h1>▓ LeetBattle</h1>
+        <h1>▓ Battle of The e-Leets</h1>
         <span className="retro-tag">⚔ Versus Mode • {elapsedLabel}</span>
       </div>
       <div className="split retro-game-split">
