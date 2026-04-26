@@ -2,7 +2,7 @@ import { problems } from '../../../../judge/src/problems';
 import { Room } from '../../../../shared/types';
 import { rooms } from '../../state/rooms';
 import { getRoomBySocketId, generateUniqueRoomCode } from '../helpers';
-import { clearRoomTurnTimer, scheduleTurnTimer } from '../turnTimer';
+import { clearRoomTurnTimer } from '../turnTimer';
 import { ClientSocket, SocketServer } from '../types';
 
 export function registerRoomHandlers(io: SocketServer, socket: ClientSocket): void {
@@ -84,7 +84,6 @@ export function registerRoomHandlers(io: SocketServer, socket: ClientSocket): vo
       room.turnHistory = [];
       room.turnNumber = 1;
       room.currentTurnSocketId = room.players[0]?.socketId;
-      scheduleTurnTimer(io, roomCode);
     }
 
     io.to(roomCode).emit('game-started', { room, serverNow: now });
