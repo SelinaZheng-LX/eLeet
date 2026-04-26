@@ -79,7 +79,8 @@ export function registerRoomHandlers(io: SocketServer, socket: ClientSocket): vo
     }
 
     if (room.mode === 'COLLAB') {
-      room.codeState = '';
+      const selectedProblem = problems.find((entry) => entry.id === room.problemId);
+      room.codeState = selectedProblem?.starterCode.python ?? '';
       room.turnHistory = [];
       room.turnNumber = 1;
       room.currentTurnSocketId = room.players[0]?.socketId;
