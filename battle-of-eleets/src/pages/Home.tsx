@@ -1,12 +1,21 @@
 import { useNavigate } from "react-router-dom"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useGame } from "../lib/gameContext"
 
 export default function Home() {
   const navigate = useNavigate()
-  const { createRoom, joinRoom } = useGame()
+  const { createRoom, joinRoom, roomCode: activeRoomCode, players, currentUser } = useGame()
   const [username, setUsername] = useState("")
   const [roomCode, setRoomCode] = useState("")
+  const [pendingAction, setPendingAction] = useState<"create" | "join" | null>(null)
+
+  useEffect(() => {
+    if (!pendingAction || !activeRoomCode || !currentUser) return
+    const selfInRoom = players.some((player) => player.socketId === currentUser.socketId)
+    if (!selfInRoom) return
+    setPendingAction(null)
+    navigate("/lobby")
+  }, [activeRoomCode, currentUser, navigate, pendingAction, players])
 
   return (
     <div className="retro-screen scanlines">
@@ -34,7 +43,7 @@ export default function Home() {
             onClick={() => {
               if (!username.trim()) return
               createRoom(username.trim())
-              navigate("/lobby")
+              setPendingAction("create")
             }}
             className="retro-btn retro-btn-primary"
           >
@@ -44,7 +53,7 @@ export default function Home() {
             onClick={() => {
               if (!username.trim() || !roomCode.trim()) return
               joinRoom(roomCode.trim(), username.trim())
-              navigate("/lobby")
+              setPendingAction("join")
             }}
             className="retro-btn retro-btn-secondary"
           >

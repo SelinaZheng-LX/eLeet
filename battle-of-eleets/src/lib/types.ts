@@ -30,3 +30,10 @@ export interface SubmissionResult {
   runtime?: number
   error?: string
 }
+
+export interface Room {
+  code: string
+  hostSocketId: string
+  mode: GameMode | null
+  problemId: string | null
+}

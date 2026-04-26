@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { getProblemById, getProblems } from "./api"
+import { getProblemById, getProblems, getRoomByCode } from "./api"
 import { MOCK_PROBLEMS } from "./mockData"
 import { isMockSocket, socket } from "./socket"
 import type { GameMode, Player, Problem, SubmissionResult } from "./types"
@@ -37,6 +37,7 @@ interface GameContextValue extends GameState {
   addCollabLine: (line: string) => void
   submitVersus: () => void
   submitCollab: () => void
+  hydrateProblemForRoom: (roomCode: string) => Promise<void>
   resetGame: () => void
 }
 
@@ -390,6 +391,27 @@ export function GameProvider({ children }: { children: ReactNode }) {
           return
         }
         socket.emit("submit-collab", { roomCode: state.roomCode, language: "python" })
+      },
+      async hydrateProblemForRoom(roomCode) {
+        const normalizedRoomCode = roomCode.trim().toUpperCase()
+        if (!normalizedRoomCode) return
+
+        try {
+          const room = await getRoomByCode(normalizedRoomCode)
+          if (!room.problemId) return
+          const problem = await getProblemById(room.problemId)
+
+          setState((prev) => ({
+            ...prev,
+            roomCode: prev.roomCode || normalizedRoomCode,
+            mode: prev.mode ?? room.mode,
+            selectedProblem: problem,
+            versusCode: prev.versusCode || problem.starterCode.python || "",
+            collabCode: prev.collabCode || problem.starterCode.python || "",
+          }))
+        } catch {
+          // Best-effort fallback for event timing issues.
+        }
       },
       resetGame() {
         setState(DEFAULT_STATE)

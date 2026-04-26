@@ -90,14 +90,13 @@ function prepareSourceCode(sourceCode: string, language: string): string {
     let pythonRunner = '';
     if (needsTwoSumRunner) {
       pythonRunner = `
-import ast
 import json
 import sys
 
 def __run_two_sum():
     raw = [line for line in sys.stdin.read().splitlines() if line.strip()]
-    nums = ast.literal_eval(raw[0]) if len(raw) > 0 else []
-    target = ast.literal_eval(raw[1]) if len(raw) > 1 else 0
+    nums = json.loads(raw[0]) if len(raw) > 0 else []
+    target = json.loads(raw[1]) if len(raw) > 1 else 0
     if 'twoSum' in globals():
       out = twoSum(nums, target)
     elif 'two_sum' in globals():
@@ -111,13 +110,12 @@ if __name__ == "__main__":
 `;
     } else if (needsRightSideViewRunner) {
       pythonRunner = `
-import ast
 import json
 import sys
 
 def __run_right_side_view():
     raw = sys.stdin.read().strip()
-    arr = ast.literal_eval(raw) if raw else []
+    arr = json.loads(raw) if raw else []
     root = build_tree(arr)
     if 'rightSideView' in globals():
       out = rightSideView(root)

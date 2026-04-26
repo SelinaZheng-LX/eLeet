@@ -56,7 +56,7 @@ export function registerVersusHandlers(io: SocketServer, socket: ClientSocket): 
     const results = Object.values(room.submissions);
     const winner = results.find((entry) => entry.passed);
     const bothPlayersSubmitted = results.length >= 2;
-    if (winner || bothPlayersSubmitted) {
+    if (bothPlayersSubmitted) {
       room.status = 'FINISHED';
       io.to(roomCode).emit('game-ended', {
         winnerId: winner?.socketId,

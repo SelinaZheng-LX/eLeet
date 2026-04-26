@@ -9,6 +9,7 @@ const TURN_SECONDS = 30
 export default function CollabGame() {
   const navigate = useNavigate()
   const {
+    roomCode,
     selectedProblem,
     collabCode,
     players,
@@ -16,6 +17,7 @@ export default function CollabGame() {
     currentTurnSocketId,
     collabTurnNumber,
     results,
+    hydrateProblemForRoom,
     addCollabLine,
     submitCollab,
   } = useGame()
@@ -32,6 +34,11 @@ export default function CollabGame() {
       navigate("/results")
     }
   }, [navigate, results.length])
+
+  useEffect(() => {
+    if (selectedProblem || !roomCode) return
+    void hydrateProblemForRoom(roomCode)
+  }, [hydrateProblemForRoom, roomCode, selectedProblem])
 
   if (!selectedProblem) {
     return (

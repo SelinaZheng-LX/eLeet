@@ -5,6 +5,42 @@ function normalizeOutput(output: string | null | undefined): string {
   return (output ?? '').trim();
 }
 
+function tryParseJson(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function areOutputsEquivalent(actual: string, expected: string): boolean {
+  if (actual === expected) {
+    return true;
+  }
+
+  const parsedActual = tryParseJson(actual);
+  const parsedExpected = tryParseJson(expected);
+  if (parsedActual === null || parsedExpected === null) {
+    return false;
+  }
+
+  // Two Sum style outputs should accept both [i,j] and [j,i].
+  if (
+    Array.isArray(parsedActual) &&
+    Array.isArray(parsedExpected) &&
+    parsedActual.length === 2 &&
+    parsedExpected.length === 2 &&
+    parsedActual.every((entry) => typeof entry === 'number') &&
+    parsedExpected.every((entry) => typeof entry === 'number')
+  ) {
+    const sortedActual = [...parsedActual].sort((a, b) => Number(a) - Number(b));
+    const sortedExpected = [...parsedExpected].sort((a, b) => Number(a) - Number(b));
+    return JSON.stringify(sortedActual) === JSON.stringify(sortedExpected);
+  }
+
+  return JSON.stringify(parsedActual) === JSON.stringify(parsedExpected);
+}
+
 export async function runSubmission(
   code: string,
   language: string,
@@ -34,7 +70,7 @@ export async function runSubmission(
       };
     }
 
-    if (actual !== expected) {
+    if (!areOutputsEquivalent(actual, expected)) {
       return {
         passed: false,
         passedCount,

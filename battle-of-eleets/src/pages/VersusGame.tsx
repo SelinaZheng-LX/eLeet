@@ -5,13 +5,26 @@ import { useGame } from "../lib/gameContext"
 
 export default function VersusGame() {
   const navigate = useNavigate()
-  const { selectedProblem, versusCode, results, setVersusCode, submitVersus } = useGame()
+  const {
+    roomCode,
+    selectedProblem,
+    versusCode,
+    results,
+    hydrateProblemForRoom,
+    setVersusCode,
+    submitVersus,
+  } = useGame()
 
   useEffect(() => {
     if (results.length > 0) {
       navigate("/results")
     }
   }, [navigate, results.length])
+
+  useEffect(() => {
+    if (selectedProblem || !roomCode) return
+    void hydrateProblemForRoom(roomCode)
+  }, [hydrateProblemForRoom, roomCode, selectedProblem])
 
   if (!selectedProblem) {
     return (
