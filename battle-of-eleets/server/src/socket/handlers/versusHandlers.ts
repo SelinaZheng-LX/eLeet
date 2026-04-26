@@ -54,12 +54,14 @@ export function registerVersusHandlers(io: SocketServer, socket: ClientSocket): 
     io.to(roomCode).emit('submission-result', result);
 
     const results = Object.values(room.submissions);
-    const winner = results.find((entry) => entry.passed);
-    const bothPlayersSubmitted = results.length >= 2;
-    if (bothPlayersSubmitted) {
+    const allPlayersSubmitted = results.length >= room.players.length;
+    const bothPlayersPassed =
+      allPlayersSubmitted && results.every((entry) => entry.passed);
+
+    if (bothPlayersPassed) {
       room.status = 'FINISHED';
       io.to(roomCode).emit('game-ended', {
-        winnerId: winner?.socketId,
+        winnerId: undefined,
         results,
       });
     }
