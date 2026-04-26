@@ -9,6 +9,7 @@ export default function VersusGame() {
     roomCode,
     selectedProblem,
     versusCode,
+    gameStarted,
     results,
     hydrateProblemForRoom,
     setVersusCode,
@@ -16,10 +17,10 @@ export default function VersusGame() {
   } = useGame()
 
   useEffect(() => {
-    if (results.length > 0) {
+    if (!gameStarted && results.length > 0) {
       navigate("/results")
     }
-  }, [navigate, results.length])
+  }, [gameStarted, navigate, results.length])
 
   useEffect(() => {
     if (selectedProblem || !roomCode) return

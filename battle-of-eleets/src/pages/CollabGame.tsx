@@ -16,6 +16,7 @@ export default function CollabGame() {
     currentUser,
     currentTurnSocketId,
     collabTurnNumber,
+    gameStarted,
     results,
     hydrateProblemForRoom,
     addCollabLine,
@@ -30,10 +31,10 @@ export default function CollabGame() {
   )
 
   useEffect(() => {
-    if (results.length > 0) {
+    if (!gameStarted && results.length > 0) {
       navigate("/results")
     }
-  }, [navigate, results.length])
+  }, [gameStarted, navigate, results.length])
 
   useEffect(() => {
     if (selectedProblem || !roomCode) return
