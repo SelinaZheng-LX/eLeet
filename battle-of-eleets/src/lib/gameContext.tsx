@@ -144,6 +144,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const resolvedProblem =
           prev.selectedProblem ??
           (room.problemId ? prev.problems.find((entry) => entry.id === room.problemId) ?? null : null)
+        const starterPython = resolvedProblem?.starterCode.python ?? ""
+        const hasRoomCodeState = typeof room.codeState === "string" && room.codeState.trim().length > 0
 
         return {
           ...prev,
@@ -151,8 +153,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           selectedProblem: resolvedProblem,
           gameStarted: true,
           versusCode: resolvedProblem?.starterCode.python ?? prev.versusCode,
-          collabCode:
-            room.codeState ?? resolvedProblem?.starterCode.python ?? prev.collabCode,
+          collabCode: hasRoomCodeState ? room.codeState ?? "" : starterPython || prev.collabCode,
           currentTurnSocketId: room.currentTurnSocketId ?? null,
           collabTurnNumber: room.turnNumber ?? 1,
           gameStartedAt: room.startedAt ?? prev.gameStartedAt,
@@ -163,12 +164,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (room.problemId) {
         void getProblemById(room.problemId)
           .then((problem) => {
+            const starterPython = problem.starterCode.python || ""
+            const hasRoomCodeState =
+              typeof room.codeState === "string" && room.codeState.trim().length > 0
             setState((prev) => ({
               ...prev,
               selectedProblem: problem,
               versusCode: prev.versusCode || problem.starterCode.python || "",
-              collabCode:
-                room.codeState ?? prev.collabCode ?? problem.starterCode.python ?? "",
+              collabCode: hasRoomCodeState
+                ? room.codeState ?? ""
+                : prev.collabCode || starterPython,
             }))
           })
           .catch(() => {
