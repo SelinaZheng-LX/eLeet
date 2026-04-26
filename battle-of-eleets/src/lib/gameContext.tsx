@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { getProblems } from "./api"
+import { getProblemById, getProblems } from "./api"
 import { MOCK_PROBLEMS } from "./mockData"
 import { isMockSocket, socket } from "./socket"
 import type { GameMode, Player, Problem, SubmissionResult } from "./types"
@@ -126,19 +126,45 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }: {
       room: {
         mode: GameMode | null
+        problemId?: string | null
         codeState?: string
         currentTurnSocketId?: string
         turnNumber?: number
       }
     }) => {
-      setState((prev) => ({
-        ...prev,
-        mode: room.mode,
-        gameStarted: true,
-        collabCode: room.codeState ?? prev.collabCode,
-        currentTurnSocketId: room.currentTurnSocketId ?? null,
-        collabTurnNumber: room.turnNumber ?? 1,
-      }))
+      setState((prev) => {
+        const resolvedProblem =
+          prev.selectedProblem ??
+          (room.problemId ? prev.problems.find((entry) => entry.id === room.problemId) ?? null : null)
+
+        return {
+          ...prev,
+          mode: room.mode,
+          selectedProblem: resolvedProblem,
+          gameStarted: true,
+          versusCode: resolvedProblem?.starterCode.python ?? prev.versusCode,
+          collabCode:
+            room.codeState ?? resolvedProblem?.starterCode.python ?? prev.collabCode,
+          currentTurnSocketId: room.currentTurnSocketId ?? null,
+          collabTurnNumber: room.turnNumber ?? 1,
+        }
+      })
+
+      if (room.problemId) {
+        void getProblemById(room.problemId)
+          .then((problem) => {
+            setState((prev) => ({
+              ...prev,
+              selectedProblem: problem,
+              versusCode: prev.versusCode || problem.starterCode.python || "",
+              collabCode:
+                room.codeState ?? prev.collabCode ?? problem.starterCode.python ?? "",
+            }))
+          })
+          .catch(() => {
+            // Keep existing state if problem hydration fails.
+          })
+      }
     }
 
     const handleTurnChanged = ({

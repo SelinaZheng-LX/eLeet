@@ -16,3 +16,20 @@ export async function getProblems(): Promise<Problem[]> {
 
   return (await response.json()) as Problem[]
 }
+
+export async function getProblemById(problemId: string): Promise<Problem> {
+  if (useMockApi) {
+    const problem = MOCK_PROBLEMS.find((entry) => entry.id === problemId)
+    if (!problem) {
+      throw new Error("Problem not found")
+    }
+    return problem
+  }
+
+  const response = await fetch(`${apiUrl}/problems/${problemId}`)
+  if (!response.ok) {
+    throw new Error("Failed to load problem")
+  }
+
+  return (await response.json()) as Problem
+}
