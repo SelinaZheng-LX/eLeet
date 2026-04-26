@@ -374,7 +374,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
           }))
           return
         }
-        socket.emit("add-line", { roomCode: state.roomCode, line })
+        socket.emit("add-line", {
+          roomCode: state.roomCode,
+          line,
+          baseCode: state.collabCode,
+        })
       },
       submitVersus() {
         if (!state.roomCode || !state.versusCode) return

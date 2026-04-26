@@ -2,7 +2,7 @@ import { problems } from '../../../../judge/src/problems';
 import { runSubmission } from '../../../../judge/src/pipeline';
 import { TurnEntry } from '../../../../shared/types';
 import { rooms } from '../../state/rooms';
-import { clearRoomTurnTimer, scheduleTurnTimer } from '../turnTimer';
+import { clearRoomTurnTimer } from '../turnTimer';
 import { ClientSocket, SocketServer } from '../types';
 
 function getOtherPlayerSocketId(roomCode: string, socketId: string): string | null {
@@ -15,7 +15,7 @@ function getOtherPlayerSocketId(roomCode: string, socketId: string): string | nu
 }
 
 export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): void {
-  socket.on('add-line', ({ roomCode, line }) => {
+  socket.on('add-line', ({ roomCode, line, baseCode }) => {
     const room = rooms.get(roomCode);
     if (!room || room.mode !== 'COLLAB' || room.status !== 'IN_GAME') {
       return;
@@ -35,7 +35,15 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
       return;
     }
 
-    const nextCodeState = room.codeState ? `${room.codeState}\n${normalizedLine}` : normalizedLine;
+    const normalizedBaseCode = String(baseCode ?? '').replace(/\r/g, '');
+    const hasRoomCodeState = typeof room.codeState === 'string' && room.codeState.trim().length > 0;
+    const effectiveBaseCode = hasRoomCodeState
+      ? room.codeState ?? ''
+      : normalizedBaseCode;
+
+    const nextCodeState = effectiveBaseCode
+      ? `${effectiveBaseCode}\n${normalizedLine}`
+      : normalizedLine;
     const turnNumber = room.turnNumber ?? 1;
     const turnEntry: TurnEntry = {
       socketId: socket.id,
@@ -64,7 +72,6 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
         currentTurnSocketId: room.currentTurnSocketId,
         turnNumber: room.turnNumber ?? turnNumber,
       });
-      scheduleTurnTimer(io, roomCode);
     }
   });
 

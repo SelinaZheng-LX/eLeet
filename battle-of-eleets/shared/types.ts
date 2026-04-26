@@ -62,7 +62,7 @@ export interface SocketEvents {
   'select-problem': { roomCode: string; problemId: string };
   'start-game': { roomCode: string };
   'submit-code': { roomCode: string; code: string; language: string };
-  'add-line': { roomCode: string; line: string };
+  'add-line': { roomCode: string; line: string; baseCode?: string };
   'submit-collab': { roomCode: string; language: string };
 
   'room-created': { roomCode: string };
