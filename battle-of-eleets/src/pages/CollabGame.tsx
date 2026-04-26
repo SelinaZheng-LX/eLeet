@@ -111,7 +111,7 @@ export default function CollabGame() {
             theme="vs-dark"
             options={{
               minimap: { enabled: false },
-              readOnly: !isMyTurn,
+              readOnly: true,
               fontSize: 14,
               scrollBeyondLastLine: false,
               padding: { top: 12 },

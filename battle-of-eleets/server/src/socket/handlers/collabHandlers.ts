@@ -30,12 +30,17 @@ export function registerCollabHandlers(io: SocketServer, socket: ClientSocket): 
       return;
     }
 
-    const nextCodeState = room.codeState ? `${room.codeState}\n${line}` : line;
+    const normalizedLine = String(line ?? '').replace(/\r/g, '').split('\n')[0].trimEnd();
+    if (!normalizedLine) {
+      return;
+    }
+
+    const nextCodeState = room.codeState ? `${room.codeState}\n${normalizedLine}` : normalizedLine;
     const turnNumber = room.turnNumber ?? 1;
     const turnEntry: TurnEntry = {
       socketId: socket.id,
       username: player.username,
-      line,
+      line: normalizedLine,
       turnNumber,
     };
 
